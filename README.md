@@ -35,4 +35,5 @@ A lightweight, Manifest V3 Chrome extension that automatically detects native da
 ## FAQ
 
 Q: why not upload it to chrome store?
+
 A: chrome store account need you to pay 5 bucks just for making dev account
