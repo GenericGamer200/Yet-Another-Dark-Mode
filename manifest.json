@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Yet Another Dark Mode",
+  "version": "1.0",
+  "description": "Toggles dark mode across all Chrome tabs, including Google Drive and Docs.",
+  "permissions": ["storage"],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ]
+}
