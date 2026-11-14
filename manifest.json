@@ -4,14 +4,20 @@
   "version": "1.0",
   "description": "Toggles dark mode across all Chrome tabs, including Google Drive and Docs.",
   "permissions": ["storage"],
-  "action": {
-    "default_popup": "popup.html"
-  },
+  "action": { "default_popup": "popup.html" },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
+      "js": ["canvas-patch.js"],
+      "run_at": "document_start",
+      "all_frames": true,
+      "world": "MAIN"
+    },
+    {
+      "matches": ["<all_urls>"],
       "js": ["content.js"],
-      "run_at": "document_start"
+      "run_at": "document_start",
+      "all_frames": true
     }
   ]
 }

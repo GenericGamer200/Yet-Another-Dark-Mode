@@ -7,22 +7,17 @@ function getDarkCSS(invertVal) {
       background-color: #111111 !important;
     }
 
-    /* Re-invert media so photos, videos, and icons keep normal colors */
-    img, video, picture, canvas, iframe, [style*="background-image"] {
+    /* Protect real images / media */
+    img, video, picture, iframe,
+    [style*="background-image"],
+    svg image {
       filter: invert(1) hue-rotate(180deg) !important;
-    }
-
-    /* Fix Google Docs & Sheets canvas rendering so pages don't double-invert */
-    .kix-canvas-tile-content,
-    .waffle-grid-container canvas {
-      filter: none !important;
     }
   `;
 }
 
 function isExcluded(excludedList = []) {
-  let currentHost = window.location.hostname.toLowerCase();
-  currentHost = currentHost.replace(/^www\./, "");
+  let currentHost = window.location.hostname.toLowerCase().replace(/^www\./, "");
 
   return excludedList.some((domain) => {
     let cleanDomain = domain
@@ -36,7 +31,6 @@ function isExcluded(excludedList = []) {
 function isNativeDarkMode() {
   const docEl = document.documentElement;
   const body = document.body;
-
   if (!docEl) return false;
 
   const computedHtml = window.getComputedStyle(docEl);
@@ -63,12 +57,9 @@ function isNativeDarkMode() {
       const g = parseInt(match[2]);
       const b = parseInt(match[3]);
       const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
-      if (brightness < 45) {
-        return true;
-      }
+      if (brightness < 45) return true;
     }
   }
-
   return false;
 }
 
@@ -79,23 +70,30 @@ function applyTheme(settings) {
   const invertVal = settings.invertVal ?? 0.92;
 
   const shouldApply = isGlobalOn && !isNativeDarkMode() && !isExcluded(excludedList);
+  const wasApplied = document.documentElement.hasAttribute("data-yadm-active");
 
   if (shouldApply) {
+    document.documentElement.setAttribute("data-yadm-active", "");
     if (!existingStyle) {
       const style = document.createElement("style");
       style.id = STYLE_ID;
       style.textContent = getDarkCSS(invertVal);
-      const target = document.head || document.documentElement;
-      if (target) target.appendChild(style);
+      (document.head || document.documentElement).appendChild(style);
     } else {
       existingStyle.textContent = getDarkCSS(invertVal);
     }
-  } else if (!shouldApply && existingStyle) {
-    existingStyle.remove();
+  } else {
+    document.documentElement.removeAttribute("data-yadm-active");
+    if (existingStyle) existingStyle.remove();
+  }
+
+  // Docs canvas keeps old pixels, so reload when the state flips on a live page
+  if (location.hostname === "docs.google.com" && wasApplied !== shouldApply && document.readyState === "complete") {
+    location.reload();
   }
 }
 
-// Initialize on load
+// Initialize
 chrome.storage.local.get(["darkMode", "invertVal", "excludedSites"], (result) => {
   applyTheme(result);
 
@@ -103,11 +101,11 @@ chrome.storage.local.get(["darkMode", "invertVal", "excludedSites"], (result) =>
     if (document.readyState === "loading") {
       document.addEventListener("DOMContentLoaded", () => applyTheme(result));
     }
-    setTimeout(() => applyTheme(result), 300);
+    setTimeout(() => applyTheme(result), 400);
   }
 });
 
-// Listen for storage changes in real-time across all open tabs
+// Live updates
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === "local") {
     chrome.storage.local.get(["darkMode", "invertVal", "excludedSites"], (result) => {
