@@ -29,13 +29,6 @@ function isExcluded(excludedList = []) {
 }
 
 function isNativeDarkMode() {
-  docEl.hasAttribute("dark") ||
-    docEl.getAttribute("dark") === "true" ||
-    docEl.getAttribute("data-theme") === "dark" ||
-    docEl.getAttribute("data-color-mode") === "dark" ||
-    (body && body.getAttribute("data-theme") === "dark") ||
-    docEl.classList.contains("dark") ||
-    (body && body.classList.contains("dark"));
   const docEl = document.documentElement;
   const body = document.body;
   if (!docEl) return false;
@@ -48,6 +41,7 @@ function isNativeDarkMode() {
   }
 
   const hasDarkAttribute =
+    docEl.hasAttribute("dark") ||
     docEl.getAttribute("data-theme") === "dark" ||
     docEl.getAttribute("data-color-mode") === "dark" ||
     (body && body.getAttribute("data-theme") === "dark") ||
