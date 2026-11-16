@@ -29,6 +29,13 @@ function isExcluded(excludedList = []) {
 }
 
 function isNativeDarkMode() {
+  docEl.hasAttribute("dark") ||
+    docEl.getAttribute("dark") === "true" ||
+    docEl.getAttribute("data-theme") === "dark" ||
+    docEl.getAttribute("data-color-mode") === "dark" ||
+    (body && body.getAttribute("data-theme") === "dark") ||
+    docEl.classList.contains("dark") ||
+    (body && body.classList.contains("dark"));
   const docEl = document.documentElement;
   const body = document.body;
   if (!docEl) return false;
@@ -93,15 +100,23 @@ function applyTheme(settings) {
   }
 }
 
+let currentSettings = {};
+
+function refresh() {
+  applyTheme(currentSettings);
+}
+
 // Initialize
 chrome.storage.local.get(["darkMode", "invertVal", "excludedSites"], (result) => {
+  currentSettings = result;
   applyTheme(result);
 
   if (result.darkMode) {
     if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", () => applyTheme(result));
+      document.addEventListener("DOMContentLoaded", refresh);
     }
-    setTimeout(() => applyTheme(result), 400);
+    window.addEventListener("load", refresh);
+    setTimeout(refresh, 400);
   }
 });
 
@@ -109,7 +124,16 @@ chrome.storage.local.get(["darkMode", "invertVal", "excludedSites"], (result) =>
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === "local") {
     chrome.storage.local.get(["darkMode", "invertVal", "excludedSites"], (result) => {
+      currentSettings = result;
       applyTheme(result);
     });
   }
+});
+
+// Re-check when the site changes its own theme attributes (YouTube, GitHub, etc.)
+new MutationObserver(() => {
+  if (currentSettings.darkMode) refresh();
+}).observe(document.documentElement, {
+  attributes: true,
+  attributeFilter: ["dark", "data-theme", "data-color-mode", "class"],
 });
